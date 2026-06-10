@@ -151,23 +151,70 @@ Distribution is **GitHub-only** (no npm registry), decided 2026-06-10:
   needs `gh` or a manually created GitHub repo, then `git push -u origin main`.
 - 35 vitest tests (3 new for the scaffolder).
 
-## 7. Open questions
+## 7. Milestone 5 — Observability & feedback loop ✅ DONE (2026-06-10)
 
-Resolved 2026-06-10 (see [ORCHESTRATOR.md](ORCHESTRATOR.md)): task model (first-class
-`type: task` memories), Copilot custom-agent format (`.github/agents/*.agent.md` with
-`model` + delegation), cost telemetry (none — advisory routing).
+Post-v0.1 direction (decided 2026-06-10): the remaining risk is not technical but
+**behavioural** — do Copilot agents actually call the tools, delegate, respect the
+protocol? So before adding features, instrument real usage and dogfood.
 
-Still open:
-- **Retry budget:** failed validation loops before escalating tier vs marking `blocked`
-  (start with 2).
-- **Concurrent plans:** one active plan per project assumed initially.
-- **User-global memory:** if cross-project preferences become needed, design vault merge.
+Delivered (`v0.2.0`, 42 vitest tests):
+- **Usage journal** (`src/usage.ts`): every tool call is appended as one JSONL line
+  (`ts`, `tool`, `ms`, `ok`, summarised `args`, `error`) to
+  `.smartcopilot/logs/tool-calls.jsonl`. Implemented by patching `registerTool` once in
+  `createServer` — tool modules stay untouched. Args are summarised (long strings
+  truncated, nested structures collapsed) so memory bodies never land in the log.
+  `SMARTCOPILOT_USAGE_LOG` overrides the path or disables (`off`/`0`). Appends are
+  chained (no interleaving), fire-and-forget, and can never fail a tool call.
+  Note: calls rejected by schema validation never reach the handler, so they are
+  **not** journalled — the journal measures handler executions.
+- **`smartcopilot-mcp stats`** (`src/stats.ts`): aggregates the journal per tool
+  (calls, errors, avg/max ms, time range) for the dogfooding review.
+- `init` now ensures `.smartcopilot/logs/` is in the consumer's `.gitignore`
+  (created/appended/skipped — never clobbered); journal is per-developer, never committed.
 
-## 8. How to resume
+**In progress (user): dogfooding** on other real projects to collect journal data.
+Review after ~1 week of usage: which tools get called/ignored, error rates, whether
+the orchestrator protocol triggers — then tune tool descriptions, the complexity
+threshold and `model-routing-heuristics` on that data.
+
+## 8. Backlog — next milestones (prioritised 2026-06-10)
+
+Ordered; do **M6 only after** the first dogfooding review (its data decides priorities).
+
+### M6 — Memory hygiene (vaults rot)
+- `memory_verify` tool (or a documenter pass): flag stale memories — broken wikilinks
+  (already detected), file paths that no longer exist in the repo, memories not
+  confirmed for N months (`last-confirmed` frontmatter date, refreshed on read/update).
+- Possibly a `memory_compact` review flow for near-duplicates beyond write-time flagging.
+
+### M7 — Routing feedback loop
+- Record task outcomes (first-pass success / retries / blocked) by joining the usage
+  journal with `task_update` transitions; use it to re-tune `model-routing-heuristics`
+  on real data. Design question: derive offline (stats command) vs persist on the task.
+
+### M8 — Deeper Copilot integration
+- **MCP prompts** (`/recall`, `/plan`, `/standup`): discoverable slash-commands in
+  VS Code instead of relying on the agent's initiative.
+- **MCP resources**: expose `INDEX.md` + memories as attachable context.
+- **Git anchoring**: record the commit/branch that realised each task in its `## Log`.
+
+### M9 — Hybrid semantic search
+- Local embeddings (fastembed / transformers.js), gitignored `_index.json` cache,
+  score fusion with MiniSearch. Format already migration-free. Only worth it once
+  dogfooding shows lexical recall failing on real vault sizes.
+
+### M10 — User-global vault
+- Cross-project preferences vault merged under project-precedence (open question
+  carried over from v0.1).
+
+Still open (carried over): retry budget tuning (start 2), concurrent plans (one active
+plan assumed).
+
+## 9. How to resume
 
 1. Read `CLAUDE.md` (orientation), this file, and `ORCHESTRATOR.md` (design).
-2. `npm install && npm run build && npm test` — expect 32 green.
-3. All four milestones are shipped. Remaining ideas live in §7 and in the "later
-   refinement" notes (agent-profile registry, hybrid vector index, user-global vault).
+2. `npm install && npm run build && npm test` — expect 42 green.
+3. v0.2.0 shipped (5 milestones). Next: dogfooding review (§7), then the backlog (§8)
+   in order — M6 first, reprioritised by journal data.
 4. Reuse `MemoryStore` and the existing tool pattern (`src/tools/*` + register in
    `src/server.ts` + cover in `test/mcp.test.ts`).

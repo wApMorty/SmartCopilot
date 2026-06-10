@@ -135,11 +135,24 @@ so the server never serves stale code.
 task and to save notable findings. That instruction file is what turns "available tools"
 into a habit.
 
+## Usage journal
+
+The server appends one JSONL line per tool call to `.smartcopilot/logs/tool-calls.jsonl`
+(timestamp, tool, duration, ok/error, summarised arguments — long values are truncated,
+so memory bodies never land in the log). It is local, per-developer telemetry: `init`
+adds `.smartcopilot/logs/` to your `.gitignore`. Use it to see what Copilot actually
+calls and tune your instructions/heuristics:
+
+```bash
+npx smartcopilot-mcp stats   # calls, errors and timings per tool
+```
+
 ## Configuration
 
 | Env var | Default | Meaning |
 |---------|---------|---------|
 | `SMARTCOPILOT_VAULT` | `<cwd>/.smartcopilot/memory` | Vault directory. |
+| `SMARTCOPILOT_USAGE_LOG` | `<cwd>/.smartcopilot/logs/tool-calls.jsonl` | Usage journal path; `off` (or `0`) disables it. |
 
 ## Development (contributing to SmartCopilot)
 
@@ -157,8 +170,9 @@ CI runs the tests and attaches the installable tarball to a GitHub Release.
 
 ## Status
 
-All four pillars are shipped: memory MCP server, agentic task workflow, the specialised
-agent suite, and cost-aware model routing. History and remaining ideas:
+All four pillars are shipped (memory MCP server, agentic task workflow, the specialised
+agent suite, cost-aware model routing), plus a local usage journal + `stats` command to
+tune them on real data. History and the prioritised backlog:
 [docs/ROADMAP.md](docs/ROADMAP.md); design: [docs/ORCHESTRATOR.md](docs/ORCHESTRATOR.md).
 
 ## Notes

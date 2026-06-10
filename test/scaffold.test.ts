@@ -72,4 +72,18 @@ describe("scaffold (init command)", () => {
     expect(merged).toContain("# My own rules");
     expect(merged).toContain("# Project memory (SmartCopilot)");
   });
+
+  it("gitignores the usage journal, preserving an existing .gitignore", async () => {
+    await fs.writeFile(path.join(targetDir, ".gitignore"), "node_modules/\n");
+
+    const { actions } = await scaffold(targetDir, packageRoot);
+    expect(actions.find((a) => a.target === ".gitignore")?.status).toBe("appended");
+
+    const ignore = await fs.readFile(path.join(targetDir, ".gitignore"), "utf8");
+    expect(ignore).toContain("node_modules/");
+    expect(ignore).toContain(".smartcopilot/logs/");
+
+    const again = await scaffold(targetDir, packageRoot);
+    expect(again.actions.find((a) => a.target === ".gitignore")?.status).toBe("skipped");
+  });
 });

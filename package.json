@@ -1,6 +1,6 @@
 {
   "name": "smartcopilot-mcp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "MCP server exposing a local markdown-graph memory (Obsidian-style) for GitHub Copilot agents.",
   "type": "module",
   "repository": {

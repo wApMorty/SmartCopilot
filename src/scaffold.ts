@@ -112,6 +112,24 @@ export async function scaffold(
   await fs.mkdir(vaultDir, { recursive: true });
   act(path.join(".smartcopilot", "memory") + path.sep, hadVault ? "skipped" : "created");
 
+  // 5. Keep the per-developer usage journal out of git (the vault IS committed,
+  // the logs next to it are not).
+  const ignoreLine = ".smartcopilot/logs/";
+  const ignoreBlock = `# SmartCopilot local usage journal (per-developer, never commit)\n${ignoreLine}\n`;
+  const gitignoreDst = path.join(targetDir, ".gitignore");
+  if (!(await exists(gitignoreDst))) {
+    await fs.writeFile(gitignoreDst, ignoreBlock, "utf8");
+    act(".gitignore", "created");
+  } else {
+    const current = await fs.readFile(gitignoreDst, "utf8");
+    if (current.includes(ignoreLine)) {
+      act(".gitignore", "skipped");
+    } else {
+      await fs.writeFile(gitignoreDst, `${current.trimEnd()}\n\n${ignoreBlock}`, "utf8");
+      act(".gitignore", "appended");
+    }
+  }
+
   notes.push(
     "Commit .github/, .vscode/mcp.json and .smartcopilot/memory/ — the memory is project-scoped and shared with the team.",
     "Check that the model names in .github/agents/*.agent.md match your Copilot model picker.",

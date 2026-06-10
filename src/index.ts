@@ -3,6 +3,7 @@ import { loadConfig } from "./config.js";
 import { MemoryStore } from "./memory/vault.js";
 import { watchVault } from "./memory/watcher.js";
 import { createServer } from "./server.js";
+import { UsageLog, resolveUsageLogFile } from "./usage.js";
 
 /**
  * Entry point: load the vault, watch it for manual edits, and serve the MCP
@@ -27,7 +28,9 @@ async function main(): Promise<void> {
     }
   });
 
-  const server = createServer(store);
+  const usageLogFile = resolveUsageLogFile();
+  const usageLog = usageLogFile ? new UsageLog(usageLogFile) : undefined;
+  const server = createServer(store, usageLog);
   const transport = new StdioServerTransport();
   await server.connect(transport);
   process.stderr.write(
@@ -36,6 +39,7 @@ async function main(): Promise<void> {
 
   const shutdown = async () => {
     await watcher.close();
+    await usageLog?.flush();
     await server.close();
     process.exit(0);
   };

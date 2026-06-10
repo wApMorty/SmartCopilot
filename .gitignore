@@ -6,6 +6,9 @@ dist/
 # Memory search cache (rebuilt on startup) — never commit it.
 .smartcopilot/memory/_index.json
 
+# SmartCopilot local usage journal (per-developer, never commit)
+.smartcopilot/logs/
+
 # Atomic-write temp files from the memory vault
 .*.tmp
 
