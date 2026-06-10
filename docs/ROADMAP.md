@@ -136,6 +136,21 @@ Delivered (typecheck + build green, **32 vitest tests**):
 
 Cost telemetry: Copilot exposes none to MCP servers — routing stays advisory.
 
+## 6b. Deliverability ✅ DONE (2026-06-10)
+
+Distribution is **GitHub-only** (no npm registry), decided 2026-06-10:
+- `smartcopilot-mcp init` (new `src/cli.ts` + `src/scaffold.ts`) installs the per-repo
+  artifacts into a consumer project — agents, copilot-instructions section (appended,
+  never clobbered), `.vscode/mcp.json`, vault dir. Idempotent; the package's own
+  `.github/` files are the single-source templates (shipped via `files`).
+- Consumers: `npm i -D github:OWNER/smartcopilot` (the `prepare` script builds `dist/`
+  on git install) then `npx smartcopilot-mcp init`. Release tarballs work too.
+- CI (`.github/workflows/`): tests on push/PR (Node 20+22); `git tag vX.Y.Z` →
+  GitHub Release with the `npm pack` tarball.
+- Repo: git initialised (main), initial commit done. **Remote not yet created** —
+  needs `gh` or a manually created GitHub repo, then `git push -u origin main`.
+- 35 vitest tests (3 new for the scaffolder).
+
 ## 7. Open questions
 
 Resolved 2026-06-10 (see [ORCHESTRATOR.md](ORCHESTRATOR.md)): task model (first-class

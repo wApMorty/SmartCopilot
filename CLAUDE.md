@@ -21,6 +21,9 @@ foundation of a 4-pillar toolkit to improve agentic development.
 - **Milestone 4 — Cost-aware routing: DONE & tested.** `model_suggest` + hand-tunable
   `model-routing-heuristics` memory (10 tools total, 32 tests).
 - **All four pillars shipped.** Design reference: **[docs/ORCHESTRATOR.md](docs/ORCHESTRATOR.md)**.
+- **Deliverability: DONE.** GitHub-only distribution; `smartcopilot-mcp init` scaffolds
+  consumer repos (`src/cli.ts`/`src/scaffold.ts`); CI + tarball release on tag. Git repo
+  initialised — remote/push still pending.
 
 ## Key decisions (don't re-litigate without reason)
 
@@ -38,8 +41,8 @@ foundation of a 4-pillar toolkit to improve agentic development.
 
 ```bash
 npm install
-npm run build        # tsup -> dist/index.js
-npm test             # vitest (32 tests)
+npm run build        # tsup -> dist/{index,cli}.js
+npm test             # vitest (35 tests)
 npm run typecheck    # tsc --noEmit
 npm run dev          # run from source (tsx)
 npm run inspect      # build + MCP Inspector
