@@ -90,38 +90,27 @@ micro-task plan (`task_plan`), waits for your go, then delegates each task — t
 cost-appropriate `model` in its frontmatter; adjust the names to your Copilot model
 picker.
 
-## Setup
-
-```bash
-npm install
-npm run build
-```
+## Per-surface configuration
 
 ### VS Code (Copilot agent mode)
 
-A ready-to-use `.vscode/mcp.json` is included (it runs `node dist/index.js`). Reload the
-window, open Copilot Chat → **Agent**, open the tools picker and enable **smartcopilot**.
+`init` writes a `.vscode/mcp.json` that launches the server via `npx smartcopilot-mcp`.
+Reload the window, open Copilot Chat → **Agent**, open the tools picker and enable
+**smartcopilot**. (In this repo itself, the included `.vscode/mcp.json` runs
+`node dist/index.js` from the local build instead.)
 
 ### Copilot CLI
 
-Add the server to the CLI's MCP configuration, then verify with `/mcp`:
-
-```bash
-# from the project root, after `npm run build`
-copilot  # then inside the session:
-# /mcp add  → name: smartcopilot, command: node, args: <abs path>/dist/index.js
-```
-
-Or declare it once in `~/.copilot/mcp-config.json` (loaded automatically by every CLI
-session):
+Declare the server once in `~/.copilot/mcp-config.json` (loaded automatically by every
+CLI session), or add it interactively with `/mcp add`:
 
 ```json
 {
   "mcpServers": {
     "smartcopilot": {
       "type": "local",
-      "command": "node",
-      "args": ["/absolute/path/to/SmartCopilot/dist/index.js"],
+      "command": "npx",
+      "args": ["smartcopilot-mcp"],
       "env": {},
       "tools": ["*"]
     }
@@ -129,7 +118,9 @@ session):
 }
 ```
 
-(See GitHub's docs: *Adding MCP servers for GitHub Copilot CLI*.)
+(`npx smartcopilot-mcp` resolves the locally installed package. With a clone instead,
+use `"command": "node", "args": ["/absolute/path/to/SmartCopilot/dist/index.js"]`. See
+GitHub's docs: *Adding MCP servers for GitHub Copilot CLI*.)
 
 ### Claude Code
 
@@ -150,23 +141,25 @@ into a habit.
 |---------|---------|---------|
 | `SMARTCOPILOT_VAULT` | `<cwd>/.smartcopilot/memory` | Vault directory. |
 
-## Development
+## Development (contributing to SmartCopilot)
 
 ```bash
+git clone https://github.com/wApMorty/SmartCopilot.git && cd SmartCopilot
+npm install        # also builds dist/ (prepare script)
 npm run dev        # run the server from source (tsx)
 npm test           # vitest
 npm run typecheck  # tsc --noEmit
 npm run inspect    # build + open the MCP Inspector against the server
 ```
 
-## Roadmap
+Releases: bump `version` in `package.json`, then `git tag vX.Y.Z && git push --tags` —
+CI runs the tests and attaches the installable tarball to a GitHub Release.
 
-1. **Memory (this milestone).**
-2. **Agentic workflow** — tools to structure code exploration and task decomposition,
-   persisting tasks into memory.
-3. **Specialised agents / routing** — mapped onto Copilot's custom agents / prompt files.
-4. **Cost-aware model routing** — a *complement* to Copilot's built-in auto model
-   selection: per-task advice + cost tracking persisted in memory.
+## Status
+
+All four pillars are shipped: memory MCP server, agentic task workflow, the specialised
+agent suite, and cost-aware model routing. History and remaining ideas:
+[docs/ROADMAP.md](docs/ROADMAP.md); design: [docs/ORCHESTRATOR.md](docs/ORCHESTRATOR.md).
 
 ## Notes
 
