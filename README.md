@@ -12,8 +12,8 @@ The package is distributed from GitHub (no npm registry):
 
 ```bash
 # 1. Add the server to your project (builds itself on install)
-npm i -D github:OWNER/smartcopilot        # or download the .tgz from a GitHub Release
-                                          #    and: npm i -D ./smartcopilot-mcp-x.y.z.tgz
+npm i -D github:wApMorty/SmartCopilot    # or download the .tgz from a GitHub Release
+                                         #    and: npm i -D ./smartcopilot-mcp-x.y.z.tgz
 
 # 2. Scaffold the Copilot artifacts into your repo
 npx smartcopilot-mcp init

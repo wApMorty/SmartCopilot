@@ -17,7 +17,7 @@ const INSTRUCTIONS_MARKER = "# Project memory (SmartCopilot)";
 
 const MCP_JSON_TEMPLATE = `{
   // SmartCopilot memory MCP server (requires the smartcopilot-mcp package,
-  // e.g. \`npm i -D github:OWNER/smartcopilot\`).
+  // e.g. \`npm i -D github:wApMorty/SmartCopilot\`).
   "servers": {
     "smartcopilot": {
       "type": "stdio",

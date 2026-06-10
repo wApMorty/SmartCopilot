@@ -3,6 +3,14 @@
   "version": "0.1.0",
   "description": "MCP server exposing a local markdown-graph memory (Obsidian-style) for GitHub Copilot agents.",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wApMorty/SmartCopilot.git"
+  },
+  "homepage": "https://github.com/wApMorty/SmartCopilot#readme",
+  "bugs": {
+    "url": "https://github.com/wApMorty/SmartCopilot/issues"
+  },
   "bin": {
     "smartcopilot-mcp": "dist/cli.js"
   },
