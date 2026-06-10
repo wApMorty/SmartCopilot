@@ -1,0 +1,158 @@
+# SmartCopilot — Roadmap & Status
+
+> Living document to resume work across sessions. Last updated: **2026-06-10**.
+> Milestones 2–4 are now specified in **[ORCHESTRATOR.md](ORCHESTRATOR.md)** (the agentic
+> orchestrator vision) — that spec is the authority for their design; this file tracks
+> status and sequencing.
+
+## 1. Context & vision
+
+Improve a developer's **agentic** workflow under **GitHub Copilot** (VS Code agent mode +
+Copilot CLI). Four pillars, built on a shared MCP foundation:
+
+1. **MCP server with tools** — the integration surface Copilot calls.
+2. **Local memory** — a markdown knowledge graph (Obsidian/Graphify/Ruflo style).
+3. **Agentic workflow** — code exploration → task decomposition → routing to specialised
+   agents.
+4. **Cost-aware model routing** — pick the cheapest adequate model per task.
+
+The strategy is to ship the **memory foundation first** (everything else persists state
+through it) and layer the rest on top.
+
+## 2. Validated decisions
+
+| Topic | Decision | Rationale |
+|-------|----------|-----------|
+| Host | **GitHub Copilot** (VS Code + CLI) | User's target; mature MCP support in VS Code, CLI has its own MCP config. |
+| Stack | **TypeScript / Node** | Official MCP SDK, `npx` distribution. |
+| Memory store | **Markdown graph** (`.md` + `[[wikilinks]]`) | Transparent, git-versionable, Obsidian-compatible. |
+| Search | **Lexical** (MiniSearch, in-memory) | No native deps; format stays open to a hybrid vector index later. |
+| Memory scope | **Project, committed** to `.smartcopilot/memory/` | Shared with the team, tied to the code. |
+| Population | **Auto (tools) + manual (file edits)** | Watcher re-indexes hand edits live. |
+| Pillar 4 stance | **Complement** Copilot's auto model selection | Copilot already routes (GPT-5.4 / Sonnet 4.6 / Haiku 4.5, GA Apr 2026). |
+| Orchestrator form (2026-06-10) | **Hybrid: Copilot instructions/agents + new MCP tools** | Protocol in `.github/agents/*.agent.md`; tools persist each step. See [ORCHESTRATOR.md](ORCHESTRATOR.md). |
+| Agent execution (2026-06-10) | **Copilot custom agents** with per-agent `model` + `agent` delegation tool | Verified: supported on all surfaces; no separate API billing. |
+| Validation (2026-06-10) | **Build + tests + diff review per task**, single final user validation | Then memory write-back, only after user approval. |
+| Cost routing (2026-06-10) | **Static heuristics memory** (task type → tier), advisory | Hand-tunable; Copilot exposes no cost telemetry to MCP. |
+| Trigger (2026-06-10) | **Complexity threshold** | Trivial → direct answer; multi-file/feature → full protocol. |
+
+## 3. Milestone 1 — Memory MCP server ✅ DONE
+
+Delivered and verified (`npm run typecheck`, `npm run build`, **27 vitest tests green**,
+stdio smoke test, in-process MCP client test).
+
+### Tools
+
+| Tool | Status |
+|------|--------|
+| `memory_search` | ✅ full-text + type/tags filters, ranked, snippets |
+| `memory_read` | ✅ frontmatter + body + outgoing/broken links + backlinks |
+| `memory_write` | ✅ create/update, near-duplicate flagging, regenerates `INDEX.md` |
+| `memory_list` | ✅ recent-first, type/tag filters |
+| `memory_graph` | ✅ neighbourhood, depth 1–2 |
+| `memory_delete` | ✅ removes file, reports newly broken backlinks |
+
+### Implementation notes / invariants
+
+- `MemoryStore` (`src/memory/vault.ts`) is the in-memory authority; disk `.md` files are
+  the source of truth, re-read on `reload()`.
+- Mutating ops (`write`/`delete`/`reload`) are **serialised by a mutex**; reads are
+  synchronous snapshots. Real MCP usage is sequential request/response, so reads always
+  observe committed state in practice.
+- Writes are **atomic** (temp file + rename, with `EXDEV` copy fallback).
+- Watcher (`chokidar`) ignores generated files (`INDEX.md`) and debounces re-indexing.
+- `INDEX.md` is generated (grouped by type) — never a source of truth.
+
+### Integration shipped
+
+- `.vscode/mcp.json` — runs `node dist/index.js` for VS Code agent mode.
+- `.github/copilot-instructions.md` — nudges Copilot to consult/write memory.
+- `README.md` — setup for VS Code + Copilot CLI, tool reference, vault format.
+
+### Known limitations / deferred
+
+- Search is lexical only (no semantic recall on large vaults). Format is ready for a
+  vector index without migration.
+- No memory cache file (`_index.json`): the vault is re-scanned on startup — fast for
+  project-sized vaults; revisit if startup becomes slow.
+- Memory scope is project-only; a cross-project user vault (preferences) would need a
+  two-vault merge with precedence.
+
+## 4. Milestone 2 — Agentic workflow ✅ DONE (2026-06-10)
+
+Goal: structure **task decomposition**, persisting plans/tasks into the memory built in
+M1. Design: [ORCHESTRATOR.md](ORCHESTRATOR.md) §4.2–4.3, §6.
+
+Delivered (typecheck + build green, **31 vitest tests**):
+- Memory schema extensions: `type: plan` (`status: active|closed`) and `type: task`
+  (`status: pending|in-progress|done|blocked`, `plan` link, `order`, `agent`, `model`).
+  Workflow fields are type-gated, omitted from serialisation when unset (existing
+  memories round-trip unchanged), and hand-written files get sensible defaults.
+  `INDEX.md` shows the status inline.
+- Tools: `task_plan` (persists a plan + ordered tasks with specs/acceptance criteria,
+  flags other active plans, refuses slug collisions), `task_update` (lifecycle + `## Log`
+  notes + agent/model recording; also closes plans, warning on unfinished tasks),
+  `task_list` (defaults to the single active plan; progress counts + next pending task).
+- `.github/agents/explorer.agent.md` — read-only exploration agent (ECO model) writing
+  findings back as memories; `.github/copilot-instructions.md` now describes the
+  plan/task workflow with its complexity threshold.
+
+## 5. Milestone 3 — Specialised agents / routing ✅ DONE (2026-06-10)
+
+Goal: route subtasks to specialised agents. **Format question resolved (2026-06-10):**
+Copilot custom agents live in `.github/agents/*.agent.md` and support per-agent `model`
+plus an `agent` tool (alias `Task`) for delegation — true orchestration is possible
+inside Copilot. Design: [ORCHESTRATOR.md](ORCHESTRATOR.md) §3–5.
+
+Delivered (markdown artifacts only — no code change; frontmatter parse-checked):
+- The committed agent suite in `.github/agents/`: **orchestrator** (protocol owner —
+  triage, recall, plan w/ user go, delegate, supervise, user-validation gate, memorise;
+  no edit/execute tools, Sonnet), **implementer** (one task spec, runs checks, Sonnet),
+  **reviewer** (diff vs spec/acceptance criteria, explicit APPROVE/REQUEST_CHANGES
+  verdict, read-only + execute, Sonnet), **documenter** (summary memories + plan close
+  after user approval, Haiku), plus **explorer** from M2 (Haiku).
+- Retry budget: 2 implementer retries per task on REQUEST_CHANGES, then `blocked`.
+- Triage rule in `.github/copilot-instructions.md` routes feature work to the
+  orchestrator (with an inline-protocol fallback for surfaces without delegation).
+- Tool aliases verified: `read`/`edit`/`search`/`execute`/`agent`/`web`/`todo`,
+  MCP via `smartcopilot/<tool>` or `smartcopilot/*`.
+
+A profile registry/generator remains a possible later refinement.
+
+## 6. Milestone 4 — Cost-aware model routing ✅ DONE (2026-06-10)
+
+Goal: **complement** Copilot's auto model selection with per-task heuristics + cost
+awareness. Design: [ORCHESTRATOR.md](ORCHESTRATOR.md) §4.4.
+
+Delivered (typecheck + build green, **32 vitest tests**):
+- `model_suggest` — task type/size/risk → tier (eco/standard/frontier) + model +
+  rationale. `risk: high` and `size: large` each escalate one step; unknown types fall
+  back to standard (and say so). Advisory only.
+- Heuristics live in the `model-routing-heuristics` memory (markdown tables, re-parsed
+  on every call, hand-tunable; seeded with defaults on first use).
+- Per-agent `model` pinning in the `.agent.md` files is the enforcement mechanism; the
+  orchestrator warns the user before any frontier-tier task instead of silently burning
+  a high-multiplier request.
+
+Cost telemetry: Copilot exposes none to MCP servers — routing stays advisory.
+
+## 7. Open questions
+
+Resolved 2026-06-10 (see [ORCHESTRATOR.md](ORCHESTRATOR.md)): task model (first-class
+`type: task` memories), Copilot custom-agent format (`.github/agents/*.agent.md` with
+`model` + delegation), cost telemetry (none — advisory routing).
+
+Still open:
+- **Retry budget:** failed validation loops before escalating tier vs marking `blocked`
+  (start with 2).
+- **Concurrent plans:** one active plan per project assumed initially.
+- **User-global memory:** if cross-project preferences become needed, design vault merge.
+
+## 8. How to resume
+
+1. Read `CLAUDE.md` (orientation), this file, and `ORCHESTRATOR.md` (design).
+2. `npm install && npm run build && npm test` — expect 32 green.
+3. All four milestones are shipped. Remaining ideas live in §7 and in the "later
+   refinement" notes (agent-profile registry, hybrid vector index, user-global vault).
+4. Reuse `MemoryStore` and the existing tool pattern (`src/tools/*` + register in
+   `src/server.ts` + cover in `test/mcp.test.ts`).

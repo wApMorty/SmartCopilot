@@ -1,0 +1,23 @@
+{
+  // SmartCopilot memory MCP server for GitHub Copilot agent mode (VS Code).
+  // After `npm run build`, reload the window and enable the server from the
+  // tools picker in Copilot Chat (Agent mode).
+  "servers": {
+    "smartcopilot": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${workspaceFolder}/dist/index.js"],
+      "env": {
+        // Optional: point at a different vault. Defaults to
+        // <workspace>/.smartcopilot/memory when unset.
+        // "SMARTCOPILOT_VAULT": "${workspaceFolder}/.smartcopilot/memory"
+      }
+    }
+    // Published-package alternative (no local build needed):
+    // "smartcopilot": {
+    //   "type": "stdio",
+    //   "command": "npx",
+    //   "args": ["-y", "smartcopilot-mcp"]
+    // }
+  }
+}

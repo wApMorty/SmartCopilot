@@ -1,0 +1,13 @@
+node_modules/
+dist/
+*.log
+*.tgz
+
+# Memory search cache (rebuilt on startup) — never commit it.
+.smartcopilot/memory/_index.json
+
+# Atomic-write temp files from the memory vault
+.*.tmp
+
+# Local-only Claude Code overrides
+.claude/settings.local.json

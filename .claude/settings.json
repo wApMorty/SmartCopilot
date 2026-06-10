@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "(cd \"$CLAUDE_PROJECT_DIR\" && npm run build) >/dev/null 2>&1 || true",
+            "timeout": 90,
+            "statusMessage": "Building the smartcopilot MCP server…"
+          }
+        ]
+      }
+    ]
+  }
+}

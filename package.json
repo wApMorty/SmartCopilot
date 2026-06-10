@@ -1,0 +1,51 @@
+{
+  "name": "smartcopilot-mcp",
+  "version": "0.1.0",
+  "description": "MCP server exposing a local markdown-graph memory (Obsidian-style) for GitHub Copilot agents.",
+  "type": "module",
+  "bin": {
+    "smartcopilot-mcp": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    ".github/agents",
+    ".github/copilot-instructions.md",
+    "docs/ORCHESTRATOR.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsup",
+    "prepare": "tsup",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "inspect": "npm run build && npx @modelcontextprotocol/inspector node dist/index.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "github-copilot",
+    "memory",
+    "obsidian",
+    "knowledge-graph"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "chokidar": "^4.0.3",
+    "gray-matter": "^4.0.3",
+    "minisearch": "^7.1.2",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsup": "^8.3.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}
